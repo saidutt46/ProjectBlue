@@ -1,4 +1,5 @@
-﻿using Azure;
+﻿using AutoMapper;
+using Azure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,12 +7,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Persistence.DtoModel;
 using Persistence.Models;
+using Persistence.Responses;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using WebAPI.Extensions;
 
 namespace JWTAuthentication.Controllers
 {
@@ -22,19 +25,28 @@ namespace JWTAuthentication.Controllers
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        public AuthenticateController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
+
+        public AuthenticateController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, IMapper mapper)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         [HttpPost]
         [Route("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrorMessages());
             var user = await userManager.FindByNameAsync(model.Username!);
+            if (user != null && await userManager.CheckPasswordAsync(user, model.Password) == false)
+            {
+                return BadRequest("Incorrect Password, please retry with a valid password for given user");
+            }
             if (user != null && await userManager.CheckPasswordAsync(user, model.Password!))
             {
                 var userRoles = await userManager.GetRolesAsync(user);
@@ -59,12 +71,16 @@ namespace JWTAuthentication.Controllers
                     claims: authClaims,
                     signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                     );
+                var convertedToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-                return Ok(new
+                UserProfileDto currentUser = _mapper.Map<ApplicationUser, UserProfileDto>(user);
+                LoginResponse response = new LoginResponse
                 {
-                    token = new JwtSecurityTokenHandler().WriteToken(token),
-                    expiration = token.ValidTo
-                });
+                    Token = convertedToken,
+                    Expiration = token.ValidTo,
+                    UserProfile = currentUser
+                };
+                return Ok(response);
             }
             return Unauthorized();
         }
@@ -73,21 +89,39 @@ namespace JWTAuthentication.Controllers
         [Route("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            var userExists = await userManager.FindByNameAsync(model.Username!);
-            if (userExists != null)
-                return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse { Status = "Error", Message = "User already exists!" });
-
-            ApplicationUser user = new ApplicationUser()
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrorMessages());
+            try
             {
-                Email = model.Email,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                UserName = model.Username
-            };
-            var result = await userManager.CreateAsync(user, model.Password!);
-            if (!result.Succeeded)
-                return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                var userExists = await userManager.FindByNameAsync(model.Username);
+                if (userExists != null)
+                    return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse { Status = "Error", Message = "User already exists!" });
 
-            return Ok(new AuthResponse { Status = "Success", Message = "User created successfully!" });
+                ApplicationUser user = new ApplicationUser()
+                {
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                    UserName = model.Username,
+                    Email = model.Email,
+                    DateJoined = DateTime.Now
+                };
+                var result = await userManager.CreateAsync(user, model.Password);
+                if (!result.Succeeded)
+                {
+                    var message = "";
+                    foreach (var error in result.Errors)
+                    {
+                        message += error.Description + ", ";
+                    }
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse { Status = "Error", Message = message });
+                }
+
+                return Ok(new AuthResponse { Success = true, Status = "Success", Message = "User created successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost]
@@ -107,8 +141,13 @@ namespace JWTAuthentication.Controllers
             var result = await userManager.CreateAsync(user, model.Password!);
             if (!result.Succeeded)
             {
-                List<string> errors = result.Errors.Select(e => e.Description).ToList();
-                return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse { Status = "Error", Message = errors.ToString() });
+                var message = "";
+                foreach (var error in result.Errors)
+                {
+                    message += error.Description + ", ";
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse { Status = "Error", Message = message });
             }
 
             if (!await roleManager.RoleExistsAsync(UserRoles.Admin))

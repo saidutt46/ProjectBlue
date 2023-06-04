@@ -13,6 +13,9 @@
     <None Remove="Context\" />
     <None Remove="Shared\" />
     <None Remove="Helpers\" />
+    <None Remove="Requests\" />
+    <None Remove="Responses\" />
+    <None Remove="Profiles\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
@@ -21,6 +24,9 @@
     <Folder Include="Context\" />
     <Folder Include="Shared\" />
     <Folder Include="Helpers\" />
+    <Folder Include="Requests\" />
+    <Folder Include="Responses\" />
+    <Folder Include="Profiles\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.5" />
@@ -41,5 +47,7 @@
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
     <PackageReference Include="Autofac" Version="7.0.1" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
   </ItemGroup>
 </Project>

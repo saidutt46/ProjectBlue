@@ -17,6 +17,8 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using Autofac.Core;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using AutoMapper;
+using Persistence.Profiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +63,15 @@ builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
     .AllowAnyHeader()
     .AllowAnyOrigin();
 }));
+
+// Auto Mapper Configurations
+var mapperConfig = new MapperConfiguration(mc =>
+{
+    mc.AddProfile(new DataProfile());
+});
+
+IMapper mapper = mapperConfig.CreateMapper();
+builder.Services.AddSingleton(mapper);
 
 //Register the Swagger generator, defining 1 or more Swagger documents
 builder.Services.AddSwaggerGen(c =>

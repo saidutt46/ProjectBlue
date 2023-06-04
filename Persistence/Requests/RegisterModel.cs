@@ -14,9 +14,6 @@ namespace Persistence.Models
 
         [Required(ErrorMessage = "Password is required")]
         public string? Password { get; set; }
-
-        [Required(ErrorMessage = "Date User Profile being created is required")]
-        public DateTime DateJoined { get; set; }
     }
 }
 
