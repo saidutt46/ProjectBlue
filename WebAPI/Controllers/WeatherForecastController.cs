@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Persistence.Models;
 
 namespace WebAPI.Controllers;
 
@@ -18,6 +20,7 @@ public class WeatherForecastController : ControllerBase
         _logger = logger;
     }
 
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpGet]
     public IEnumerable<WeatherForecast> Get()
     {
