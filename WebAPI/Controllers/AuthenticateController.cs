@@ -18,7 +18,7 @@ using WebAPI.Extensions;
 
 namespace JWTAuthentication.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/user")]
     [ApiController]
     public class AuthenticateController : ControllerBase
     {

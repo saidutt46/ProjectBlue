@@ -1,25 +1,26 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { FlexLayoutModule } from '@angular/flex-layout';
 
 import { AppComponent } from './app.component';
-import { NavMenuComponent } from './components/nav-menu/nav-menu.component';
 import { HomeComponent } from './components/home/home.component';
-import { CounterComponent } from './counter/counter.component';
-import { FetchDataComponent } from './fetch-data/fetch-data.component';
 import { AppRoutingModule } from './app-routing.module';
 import { UiUxModule } from './ui-ux/ui-ux.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NavigationComponent } from './components/navigation/navigation.component';
+import { LoginComponent } from './components/login/login.component';
+import { RegisterComponent } from './components/register/register.component';
+import { NOTIFICATION_SERV_TOKEN, NotificationService } from './services/notification.service';
 
 @NgModule({
   declarations: [
     AppComponent,
-    NavMenuComponent,
     HomeComponent,
-    CounterComponent,
-    FetchDataComponent
+    NavigationComponent,
+    LoginComponent,
+    RegisterComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -27,9 +28,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     FormsModule,
     AppRoutingModule,
     UiUxModule,
-    BrowserAnimationsModule
+    FlexLayoutModule,
+    BrowserAnimationsModule,
+    ReactiveFormsModule
   ],
-  providers: [],
+  providers: [
+    { provide: NOTIFICATION_SERV_TOKEN, useClass: NotificationService }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
